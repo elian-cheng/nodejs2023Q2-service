@@ -244,7 +244,7 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
         403:
-          description: oldPassowrd is wrong
+          description: oldPassword is wrong
         404:
           description: User not found
 
@@ -413,7 +413,7 @@ paths:
       description: Delete track from library
       responses:
         204:
-          description: Delelted succesfully
+          description: Deleted successfully
         400:
           description: Bad request. trackId is invalid (not uuid)
         401:
@@ -425,7 +425,7 @@ paths:
       tags:
         - Album
       summary: Get albums list
-      description: Gets all library alibums list
+      description: Gets all library albums list
       responses:
         200:
           description: Successful operation
@@ -463,7 +463,7 @@ paths:
                 - year
       responses:
         201:
-          description: Almub is created
+          description: Album is created
           content:
             application/json:
               schema:
@@ -542,7 +542,7 @@ paths:
       description: Delete album from library
       responses:
         204:
-          description: Deleted succesfully
+          description: Deleted successfully
         400:
           description: Bad request. albumId is invalid (not uuid)
         401:
@@ -661,7 +661,7 @@ paths:
       description: Delete artist from library
       responses:
         204:
-          description: Delelted succesfully
+          description: Deleted successfully
         400:
           description: Bad request. artistId is invalid (not uuid)
         401:
@@ -698,7 +698,7 @@ paths:
       description: Add track to the favorites
       responses:
         201:
-          description: Added succesfully
+          description: Added successfully
         400:
           description: Bad. trackId is invalid (not uuid)
         401:
@@ -712,7 +712,7 @@ paths:
       description: Delete track from favorites
       responses:
         204:
-          description: Deleted succesfully
+          description: Deleted successfully
         400:
           description: Bad. trackId is invalid (not uuid)
         401:
@@ -734,7 +734,7 @@ paths:
       description: Add album to the favorites
       responses:
         201:
-          description: Added succesfully
+          description: Added successfully
         400:
           description: Bad. albumId is invalid (not uuid)
         401:
@@ -748,7 +748,7 @@ paths:
       description: Delete album from favorites
       responses:
         204:
-          description: Deleted succesfully
+          description: Deleted successfully
         400:
           description: Bad. albumId is invalid (not uuid)
         401:
@@ -770,7 +770,7 @@ paths:
       description: Add artist to the favorites
       responses:
         201:
-          description: Added succesfully
+          description: Added successfully
         400:
           description: Bad request. artistId is invalid (not uuid)
         401:
@@ -784,7 +784,7 @@ paths:
       description: Delete artist from favorites
       responses:
         204:
-          description: Deleted succesfully
+          description: Deleted successfully
         400:
           description: Bad request. artistId is invalid (not uuid)
         401:
