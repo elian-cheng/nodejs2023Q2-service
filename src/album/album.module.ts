@@ -1,7 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { ArtistModule } from 'src/artist/artist.module';
+import { FavsModule } from 'src/favs/favs.module';
 import { TrackModule } from 'src/track/track.module';
-import { FavoritesModule } from 'src/favorites/favorites.module';
 import { AlbumController } from './album.controller';
 import { AlbumService } from './album.service';
 
@@ -9,7 +9,7 @@ import { AlbumService } from './album.service';
   imports: [
     forwardRef(() => TrackModule),
     forwardRef(() => ArtistModule),
-    forwardRef(() => FavoritesModule),
+    forwardRef(() => FavsModule),
   ],
   controllers: [AlbumController],
   providers: [AlbumService],

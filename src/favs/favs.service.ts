@@ -11,11 +11,11 @@ import {
   removeItemFromFavorites,
   responseOnSuccess,
 } from 'src/utils/validation';
-import { IFavorites } from './models/favorites.model';
+import { IFavorites } from './models/favs.model';
 
 @Injectable()
-export class FavoritesService {
-  favorites: IFavorites = {
+export class FavsService {
+  favs: IFavorites = {
     artists: [],
     albums: [],
     tracks: [],
@@ -31,7 +31,7 @@ export class FavoritesService {
   ) {}
 
   findAll() {
-    const favoritesResponse: {
+    const favsResponse: {
       artists: Artist[] | undefined[];
       albums: Album[] | undefined[];
       tracks: Track[] | undefined[];
@@ -41,51 +41,40 @@ export class FavoritesService {
       tracks: [],
     };
 
-    favoritesResponse.artists = this.artistService.getArtistsById(
-      this.favorites.artists,
-    );
-    favoritesResponse.albums = this.albumService.getAlbumsById(
-      this.favorites.albums,
-    );
-    favoritesResponse.tracks = this.trackService.getTracksById(
-      this.favorites.tracks,
-    );
+    favsResponse.artists = this.artistService.getArtistsById(this.favs.artists);
+    favsResponse.albums = this.albumService.getAlbumsById(this.favs.albums);
+    favsResponse.tracks = this.trackService.getTracksById(this.favs.tracks);
 
-    return favoritesResponse;
+    return favsResponse;
   }
 
-  addArtistToFavorites(id: string) {
+  addArtistToFavs(id: string) {
     checkItemExistence(this.artistService.artists, id, ModelNames.ARTIST, true);
-    this.favorites.artists.push(id);
+    this.favs.artists.push(id);
     return responseOnSuccess(ModelNames.ARTIST, id);
   }
 
-  addAlbumsToFavorites(id: string) {
+  addAlbumsToFavs(id: string) {
     checkItemExistence(this.albumService.albums, id, ModelNames.ALBUM, true);
-    this.favorites.albums.push(id);
+    this.favs.albums.push(id);
     return responseOnSuccess(ModelNames.ALBUM, id);
   }
 
-  addTracksToFavorites(id: string) {
+  addTracksToFavs(id: string) {
     checkItemExistence(this.trackService.tracks, id, ModelNames.TRACK, true);
-    this.favorites.tracks.push(id);
+    this.favs.tracks.push(id);
     return responseOnSuccess(ModelNames.TRACK, id);
   }
 
-  removeTrackFromFavorites(id: string) {
-    removeItemFromFavorites(this.favorites.tracks, id, ModelIds.TRACK_ID, true);
+  removeTrackFromFavs(id: string) {
+    removeItemFromFavorites(this.favs.tracks, id, ModelIds.TRACK_ID, true);
   }
 
-  removeArtistFromFavorites(id: string) {
-    removeItemFromFavorites(
-      this.favorites.artists,
-      id,
-      ModelIds.ARTIST_ID,
-      true,
-    );
+  removeArtistFromFavs(id: string) {
+    removeItemFromFavorites(this.favs.artists, id, ModelIds.ARTIST_ID, true);
   }
 
-  removeAlbumFromFavorites(id: string) {
-    removeItemFromFavorites(this.favorites.albums, id, ModelIds.ALBUM_ID, true);
+  removeAlbumFromFavs(id: string) {
+    removeItemFromFavorites(this.favs.albums, id, ModelIds.ALBUM_ID, true);
   }
 }

@@ -2,13 +2,13 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { checkItemExistence } from 'src/utils/validation';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdatePasswordDto } from './dto/updateUser.dto';
-import UserEntity from './models/user.model';
+import User from './models/user.model';
 
 const USER = 'User';
 
 @Injectable()
 export class UserService {
-  private users: UserEntity[] = [];
+  private users: User[] = [];
 
   findAll() {
     return this.users;
@@ -21,7 +21,7 @@ export class UserService {
   }
 
   create(createUserDto: CreateUserDto) {
-    const newUser = new UserEntity(createUserDto);
+    const newUser = new User(createUserDto);
     this.users.push(newUser);
     return newUser;
   }
@@ -42,7 +42,7 @@ export class UserService {
     this.users.splice(existingUserId, 1);
   }
 
-  isOldPasswordValid(user: UserEntity, oldPassword: string) {
+  isOldPasswordValid(user: User, oldPassword: string) {
     if (user.password !== oldPassword) {
       throw new ForbiddenException('Wrong old password');
     }

@@ -1,8 +1,8 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ArtistService } from 'src/artist/artist.service';
-import { FavoritesService } from 'src/favorites/favorites.service';
+import { FavsService } from 'src/favs/favs.service';
 import { TrackService } from 'src/track/track.service';
-import { ModelNames, ModelIds } from 'src/utils/constants';
+import { ModelIds, ModelNames } from 'src/utils/constants';
 import {
   checkItemExistence,
   checkItemValidation,
@@ -22,8 +22,8 @@ export class AlbumService {
     private trackService: TrackService,
     @Inject(forwardRef(() => ArtistService))
     private artistService: ArtistService,
-    @Inject(forwardRef(() => FavoritesService))
-    private favoritesService: FavoritesService,
+    @Inject(forwardRef(() => FavsService))
+    private favsService: FavsService,
   ) {}
 
   findAll() {
@@ -88,7 +88,7 @@ export class AlbumService {
     );
 
     removeItemFromFavorites(
-      this.favoritesService.favorites.albums,
+      this.favsService.favs.albums,
       id,
       ModelIds.ALBUM_ID,
     );
