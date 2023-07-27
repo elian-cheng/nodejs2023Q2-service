@@ -1,7 +1,16 @@
 import { Exclude } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
-export default class User {
+interface IUser {
+  id: string;
+  login: string;
+  password: string;
+  version: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export default class User implements IUser {
   id: string;
   login: string;
   version: number;

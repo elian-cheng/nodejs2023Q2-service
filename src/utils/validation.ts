@@ -1,30 +1,37 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import * as uuid from 'uuid';
 
-const RESOURCES_NAMES = ['Album', 'Artist', 'Track', 'User'];
+const SOURCE_NAMES = ['Album', 'Artist', 'Track', 'User'];
 
-const checkItemExistence = (
+export const checkItemExistence = (
   allItems: any[],
   itemId: string,
   itemBelongsTo: string,
+  isInFavorites = false,
 ) => {
-  const ERR_MSG = `${itemBelongsTo} with :id ${itemId} is not found in database`;
+  const ERROR_MESSAGE = `${itemBelongsTo} with :id ${itemId} is not found in database`;
   const item = allItems.find((item) => item.id === itemId);
 
-  if (!item && RESOURCES_NAMES.includes(itemBelongsTo)) {
-    throw new NotFoundException(ERR_MSG);
+  if (isInFavorites && !item) {
+    throw new UnprocessableEntityException(ERROR_MESSAGE);
+  } else if (!item && SOURCE_NAMES.includes(itemBelongsTo)) {
+    throw new NotFoundException(ERROR_MESSAGE);
   } else if (!item) {
-    throw new BadRequestException(ERR_MSG);
+    throw new BadRequestException(ERROR_MESSAGE);
   }
 };
 
-const checkValidId = (itemId: string) => {
+export const checkValidId = (itemId: string) => {
   if (!uuid.validate(itemId)) {
     throw new BadRequestException('Received Id ${itemId} is not uuid');
   }
 };
 
-const checkItemValidation = (
+export const checkItemValidation = (
   allItems: any[],
   itemId: string,
   itemBelongsTo: string,
@@ -33,20 +40,34 @@ const checkItemValidation = (
   checkItemExistence(allItems, itemId, itemBelongsTo);
 };
 
-const removeItemFromCollections = (
+export const removeItemFromCollections = (
   otherCollections: any[],
   key: string,
   value: string,
 ) => {
   otherCollections.find((collection) => {
     const item = collection.find((item) => item[key] === value);
+    if (!item) return;
     item[key] = null;
   });
 };
 
-export {
-  checkItemExistence,
-  checkValidId,
-  checkItemValidation,
-  removeItemFromCollections,
+export const removeItemFromFavorites = (
+  collection: string[],
+  id: string,
+  itemBelongsTo: string,
+  isInFavorites = false,
+) => {
+  const ERROR_MESSAGE = `${itemBelongsTo} with :id ${id} was not found in favorites`;
+  const itemIndex = collection.findIndex((item) => item === id);
+  if (itemIndex === -1 && isInFavorites) {
+    throw new NotFoundException(ERROR_MESSAGE);
+  } else if (itemIndex === -1) {
+    return;
+  }
+  collection.splice(itemIndex, 1);
+};
+
+export const responseOnSuccess = (item: string, id: string) => {
+  return `${item} with :id ${id} successfully added to favorites`;
 };

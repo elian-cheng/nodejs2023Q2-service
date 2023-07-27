@@ -1,6 +1,14 @@
 import { randomUUID } from 'crypto';
 
-export default class Track {
+interface ITrack {
+  id: string;
+  name: string;
+  artistId: string | null;
+  albumId: string | null;
+  duration: number;
+}
+
+export default class Track implements ITrack {
   id: string;
   name: string;
   artistId: string | null;

@@ -1,6 +1,12 @@
 import { randomUUID } from 'crypto';
 
-export default class Artist {
+interface IArtist {
+  id: string;
+  name: string;
+  grammy: boolean;
+}
+
+export default class Artist implements IArtist {
   id: string;
   name: string;
   grammy: boolean;

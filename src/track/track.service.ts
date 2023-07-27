@@ -1,24 +1,28 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AlbumService } from 'src/album/album.service';
 import { ArtistService } from 'src/artist/artist.service';
-import { checkItemExistence, checkItemValidation } from 'src/utils/validation';
+import { FavoritesService } from 'src/favorites/favorites.service';
+import { ModelIds, ModelNames } from 'src/utils/constants';
+import {
+  checkItemExistence,
+  checkItemValidation,
+  removeItemFromFavorites,
+} from 'src/utils/validation';
 import { CreateTrackDto } from './dto/createTrack.dto';
 import { UpdateTrackDto } from './dto/updateTrack.dto';
-import TrackEntity from './models/track.model';
-
-const TRACK = 'Track';
-const ARTIST_ID_KEY = 'artistId';
-const ALBUM_ID_KEY = 'albumId';
+import Track from './models/track.model';
 
 @Injectable()
 export class TrackService {
-  tracks: TrackEntity[] = [];
+  tracks: Track[] = [];
 
   constructor(
     @Inject(forwardRef(() => ArtistService))
     private artistService: ArtistService,
     @Inject(forwardRef(() => AlbumService))
     private albumService: AlbumService,
+    @Inject(forwardRef(() => FavoritesService))
+    private favoritesService: FavoritesService,
   ) {}
 
   findAll() {
@@ -26,26 +30,26 @@ export class TrackService {
   }
 
   findOne(id: string) {
-    checkItemExistence(this.tracks, id, TRACK);
+    checkItemExistence(this.tracks, id, ModelNames.TRACK);
     const track = this.tracks.find((track) => track.id === id);
     return track;
   }
 
   create(createTrackDto: CreateTrackDto) {
-    const newTrack = new TrackEntity(createTrackDto);
+    const newTrack = new Track(createTrackDto);
 
     if (newTrack.albumId !== null) {
       checkItemValidation(
         this.albumService.albums,
         newTrack.albumId,
-        ALBUM_ID_KEY,
+        ModelIds.ALBUM_ID,
       );
     }
     if (newTrack.artistId !== null) {
-      checkItemExistence(
+      checkItemValidation(
         this.artistService.artists,
         newTrack.artistId,
-        ARTIST_ID_KEY,
+        ModelIds.ARTIST_ID,
       );
     }
 
@@ -54,22 +58,28 @@ export class TrackService {
   }
 
   update(id: string, updateTrackDto: UpdateTrackDto) {
-    checkItemExistence(this.tracks, id, TRACK);
+    checkItemExistence(this.tracks, id, ModelNames.TRACK);
+
     const existingTrack = this.tracks.find((track) => track.id === id);
+
     for (const key in existingTrack) {
       if (updateTrackDto[key]) {
-        if (key === ARTIST_ID_KEY) {
+        if (key === ModelIds.ARTIST_ID) {
           const artistId = updateTrackDto[key];
 
           checkItemValidation(
             this.artistService.artists,
             artistId,
-            ARTIST_ID_KEY,
+            ModelIds.ARTIST_ID,
           );
-        } else if (key === ALBUM_ID_KEY) {
+        } else if (key === ModelIds.ALBUM_ID) {
           const albumId = updateTrackDto[key];
 
-          checkItemExistence(this.albumService.albums, albumId, ALBUM_ID_KEY);
+          checkItemValidation(
+            this.albumService.albums,
+            albumId,
+            ModelIds.ALBUM_ID,
+          );
         }
 
         existingTrack[key] = updateTrackDto[key];
@@ -80,7 +90,26 @@ export class TrackService {
 
   remove(id: string) {
     const existingTrackId = this.tracks.findIndex((track) => track.id === id);
-    checkItemExistence(this.tracks, id, TRACK);
+
+    checkItemExistence(this.tracks, id, ModelNames.TRACK);
+
     this.tracks.splice(existingTrackId, 1);
+
+    removeItemFromFavorites(
+      this.favoritesService.favorites.tracks,
+      id,
+      ModelIds.TRACK_ID,
+    );
+  }
+
+  getTracksById(tracksIdsArray: string[]) {
+    const tracksArray = [];
+
+    tracksIdsArray.forEach((trackId) => {
+      const track = this.tracks.filter((track) => track.id === trackId)[0];
+      tracksArray.push(track);
+    });
+
+    return tracksArray;
   }
 }

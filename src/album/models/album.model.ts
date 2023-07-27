@@ -1,6 +1,12 @@
 import { randomUUID } from 'crypto';
+interface IAlbum {
+  id: string;
+  name: string;
+  year: number;
+  artistId: string | null;
+}
 
-export default class Album {
+export default class Album implements IAlbum {
   id: string;
   name: string;
   year: number;
