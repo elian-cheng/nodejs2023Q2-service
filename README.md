@@ -13,6 +13,11 @@ Repository for Home Library Service task at RS School's NodeJS 2023 Q2 course.
 ```
 git clone https://github.com/elian-cheng/nodejs2023Q2-service.git
 ```
+### Move to the app folder
+
+```
+cd nodejs2023Q2-service
+```
 
 ### Switch to the necessary branch
 

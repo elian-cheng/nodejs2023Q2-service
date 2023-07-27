@@ -6,7 +6,6 @@ import { ModelIds, ModelNames } from 'src/utils/constants';
 import {
   checkItemExistence,
   checkItemValidation,
-  removeItemFromCollections,
   removeItemFromFavorites,
 } from 'src/utils/validation';
 import { CreateTrackDto } from './dto/createTrack.dto';
