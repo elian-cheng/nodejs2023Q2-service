@@ -41,34 +41,6 @@ export const checkItemValidation = (
   checkItemExistence(allItems, itemId, itemBelongsTo);
 };
 
-export const removeItemFromCollections = (
-  otherCollections: any[],
-  key: string,
-  value: string,
-) => {
-  otherCollections.find((collection) => {
-    const item = collection.find((item) => item[key] === value);
-    if (!item) return;
-    item[key] = null;
-  });
-};
-
-export const removeItemFromFavorites = (
-  collection: string[],
-  id: string,
-  itemBelongsTo: string,
-  isInFavorites = false,
-) => {
-  const ERROR_MESSAGE = `${itemBelongsTo} with :id ${id} was not found in favorites`;
-  const itemIndex = collection.findIndex((item) => item === id);
-  if (itemIndex === -1 && isInFavorites) {
-    throw new NotFoundException(ERROR_MESSAGE);
-  } else if (itemIndex === -1) {
-    return;
-  }
-  collection.splice(itemIndex, 1);
-};
-
 export const responseOnSuccess = (item: string, id: string) => {
   return `${item} with :id ${id} successfully added to favorites`;
 };

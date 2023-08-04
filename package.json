@@ -20,7 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "docker": "docker-compose up",
-    "docker:test": "docker exec hls-app-container npm run test",
+    "docker:test": "docker exec app-container npm run test",
     "scan:app": "docker scan hls-app-container",
     "scan:postgres": "docker scan database-container"
   },

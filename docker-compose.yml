@@ -19,7 +19,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   app:
-    container_name: hls-app-container
+    container_name: app-container
     restart: always
     build: .
     ports:
