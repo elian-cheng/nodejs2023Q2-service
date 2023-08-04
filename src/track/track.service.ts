@@ -3,20 +3,18 @@ import { AlbumService } from 'src/album/album.service';
 import { ArtistService } from 'src/artist/artist.service';
 import { FavsService } from 'src/favs/favs.service';
 import { ModelIds, ModelNames } from 'src/utils/constants';
-import {
-  checkItemExistence,
-  checkItemValidation,
-  removeItemFromFavorites,
-} from 'src/utils/validation';
+import { checkItemExistence, checkValidId } from 'src/utils/validation';
 import { CreateTrackDto } from './dto/createTrack.dto';
 import { UpdateTrackDto } from './dto/updateTrack.dto';
 import Track from './models/track.model';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TrackService {
-  tracks: Track[] = [];
-
   constructor(
+    @InjectRepository(Track)
+    private trackRepository: Repository<Track>,
     @Inject(forwardRef(() => ArtistService))
     private artistService: ArtistService,
     @Inject(forwardRef(() => AlbumService))
@@ -25,91 +23,85 @@ export class TrackService {
     private favsService: FavsService,
   ) {}
 
-  findAll() {
-    return this.tracks;
+  async findAll() {
+    return await this.trackRepository.find();
   }
 
-  findOne(id: string) {
-    checkItemExistence(this.tracks, id, ModelNames.TRACK);
-    const track = this.tracks.find((track) => track.id === id);
+  async findOne(trackId: string) {
+    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
+    const track = await this.trackRepository.findOne({
+      where: { id: trackId },
+    });
     return track;
   }
 
-  create(createTrackDto: CreateTrackDto) {
-    const newTrack = new Track(createTrackDto);
+  async create(createTrackDto: CreateTrackDto) {
+    const createdTrack = this.trackRepository.create(createTrackDto);
 
-    if (newTrack.albumId !== null) {
-      checkItemValidation(
-        this.albumService.albums,
-        newTrack.albumId,
-        ModelIds.ALBUM_ID,
-      );
+    if (createdTrack.albumId !== null) {
+      await this.albumService.checkAlbumExistence(createdTrack.albumId);
     }
-    if (newTrack.artistId !== null) {
-      checkItemValidation(
-        this.artistService.artists,
-        newTrack.artistId,
-        ModelIds.ARTIST_ID,
-      );
+    if (createdTrack.artistId !== null) {
+      await this.artistService.checkArtistExistence(createdTrack.artistId);
     }
 
-    this.tracks.push(newTrack);
+    const newTrack = await this.trackRepository.save(createdTrack);
+
     return newTrack;
   }
 
-  update(id: string, updateTrackDto: UpdateTrackDto) {
-    checkItemExistence(this.tracks, id, ModelNames.TRACK);
+  async update(trackId: string, updateTrackDto: UpdateTrackDto) {
+    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
 
-    const existingTrack = this.tracks.find((track) => track.id === id);
+    const track = await this.trackRepository.findOne({
+      where: { id: trackId },
+    });
 
-    for (const key in existingTrack) {
+    for (const key in track) {
       if (updateTrackDto[key]) {
         if (key === ModelIds.ARTIST_ID) {
           const artistId = updateTrackDto[key];
-
-          checkItemValidation(
-            this.artistService.artists,
-            artistId,
-            ModelIds.ARTIST_ID,
-          );
+          checkValidId(artistId);
+          await this.artistService.checkArtistExistence(artistId);
         } else if (key === ModelIds.ALBUM_ID) {
           const albumId = updateTrackDto[key];
-
-          checkItemValidation(
-            this.albumService.albums,
-            albumId,
-            ModelIds.ALBUM_ID,
-          );
+          checkValidId(albumId);
+          await this.albumService.checkAlbumExistence(albumId);
         }
 
-        existingTrack[key] = updateTrackDto[key];
+        track[key] = updateTrackDto[key];
       }
     }
-    return existingTrack;
+
+    const updatedTrack = await this.trackRepository.save(track);
+
+    return updatedTrack;
   }
 
-  remove(id: string) {
-    const existingTrackId = this.tracks.findIndex((track) => track.id === id);
-
-    checkItemExistence(this.tracks, id, ModelNames.TRACK);
-
-    this.tracks.splice(existingTrackId, 1);
-
-    removeItemFromFavorites(
-      this.favsService.favs.tracks,
-      id,
-      ModelIds.TRACK_ID,
-    );
+  async remove(trackId: string) {
+    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
+    await this.trackRepository.delete(trackId);
   }
 
-  getTracksById(tracksIdsArray: string[]) {
+  async getTracksById(tracksIdsArray: string[]) {
     const tracksArray = [];
 
-    tracksIdsArray.forEach((trackId) => {
-      const track = this.tracks.filter((track) => track.id === trackId)[0];
+    tracksIdsArray.forEach(async (trackId) => {
+      const track = await this.trackRepository.find({
+        where: { id: trackId },
+      })[0];
       tracksArray.push(track);
     });
 
     return tracksArray;
+  }
+
+  async checkTrackExistence(trackId: string, isFavs = false) {
+    await checkItemExistence(
+      this.trackRepository,
+      trackId,
+      ModelNames.TRACK,
+      isFavs,
+    );
   }
 }
