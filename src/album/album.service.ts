@@ -3,21 +3,17 @@ import { ArtistService } from 'src/artist/artist.service';
 import { FavsService } from 'src/favs/favs.service';
 import { TrackService } from 'src/track/track.service';
 import { ModelIds, ModelNames } from 'src/utils/constants';
-import {
-  checkItemExistence,
-  checkItemValidation,
-  removeItemFromCollections,
-  removeItemFromFavorites,
-} from 'src/utils/validation';
+import { checkItemExistence, checkValidId } from 'src/utils/validation';
 import { CreateAlbumDto } from './dto/createAlbum.dto';
 import { UpdateAlbumDto } from './dto/updateAlbum.dto';
 import Album from './models/album.model';
-
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 @Injectable()
 export class AlbumService {
-  albums: Album[] = [];
-
   constructor(
+    @InjectRepository(Album)
+    private albumRepository: Repository<Album>,
     @Inject(forwardRef(() => TrackService))
     private trackService: TrackService,
     @Inject(forwardRef(() => ArtistService))
@@ -26,82 +22,74 @@ export class AlbumService {
     private favsService: FavsService,
   ) {}
 
-  findAll() {
-    return this.albums;
+  async findAll() {
+    return await this.albumRepository.find();
   }
 
-  findOne(id: string) {
-    checkItemExistence(this.albums, id, ModelNames.ALBUM);
-    const album = this.albums.find((album) => album.id === id);
+  async findOne(albumId: string) {
+    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
+    const album = await this.albumRepository.findOne({
+      where: { id: albumId },
+    });
     return album;
   }
 
-  create(createAlbumDto: CreateAlbumDto) {
-    const newAlbum = new Album(createAlbumDto);
+  async create(createAlbumDto: CreateAlbumDto) {
+    const createdAlbum = this.albumRepository.create(createAlbumDto);
 
-    if (newAlbum.artistId !== null) {
-      checkItemValidation(
-        this.artistService.artists,
-        newAlbum.artistId,
-        ModelIds.ARTIST_ID,
-      );
+    if (createdAlbum.artistId !== null) {
+      await this.artistService.checkArtistExistence(createdAlbum.artistId);
     }
-
-    this.albums.push(newAlbum);
+    const newAlbum = await this.albumRepository.save(createdAlbum);
     return newAlbum;
   }
 
-  update(id: string, updateAlbumDto: UpdateAlbumDto) {
-    checkItemExistence(this.albums, id, ModelNames.ALBUM);
+  async update(albumId: string, updateAlbumDto: UpdateAlbumDto) {
+    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
+    const album = await this.albumRepository.findOne({
+      where: { id: albumId },
+    });
 
-    const existingAlbum = this.albums.find((album) => album.id === id);
-
-    for (const key in existingAlbum) {
+    for (const key in album) {
       if (updateAlbumDto[key]) {
         if (key === ModelIds.ARTIST_ID) {
           const artistId = updateAlbumDto[key];
-
-          checkItemValidation(
-            this.artistService.artists,
-            artistId,
-            ModelIds.ARTIST_ID,
-          );
+          checkValidId(artistId);
+          await this.artistService.checkArtistExistence(artistId);
         }
-        existingAlbum[key] = updateAlbumDto[key];
+        album[key] = updateAlbumDto[key];
       }
     }
 
-    return existingAlbum;
+    const updatedAlbum = await this.albumRepository.save(album);
+
+    return updatedAlbum;
   }
 
-  remove(id: string) {
-    const existingAlbumId = this.albums.findIndex((album) => album.id === id);
-
-    checkItemExistence(this.albums, id, ModelNames.ALBUM);
-
-    this.albums.splice(existingAlbumId, 1);
-
-    removeItemFromCollections(
-      [this.trackService.tracks],
-      ModelIds.ALBUM_ID,
-      id,
-    );
-
-    removeItemFromFavorites(
-      this.favsService.favs.albums,
-      id,
-      ModelIds.ALBUM_ID,
-    );
+  async remove(albumId: string) {
+    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
+    await this.albumRepository.delete(albumId);
   }
 
-  getAlbumsById(albumsIdsArray: string[]) {
+  async getAlbumsById(albumsIdsArray: string[]) {
     const albumsArray = [];
 
-    albumsIdsArray.forEach((albumId) => {
-      const album = this.albums.filter((album) => album.id === albumId)[0];
+    albumsIdsArray.forEach(async (albumId) => {
+      const album = await this.albumRepository.find({
+        where: { id: albumId },
+      })[0];
       albumsArray.push(album);
     });
 
     return albumsArray;
+  }
+
+  async checkAlbumExistence(albumId: string, isFavs = false) {
+    await checkItemExistence(
+      this.albumRepository,
+      albumId,
+      ModelNames.ALBUM,
+      isFavs,
+    );
   }
 }

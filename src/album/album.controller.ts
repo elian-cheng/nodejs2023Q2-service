@@ -25,25 +25,25 @@ export class AlbumController {
 
   @Get(':uuid')
   async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.albumService.findOne(uuid);
+    return await this.albumService.findOne(uuid);
   }
 
   @Post()
-  create(@Body() createAlbumDto: CreateAlbumDto) {
-    return this.albumService.create(createAlbumDto);
+  async create(@Body() createAlbumDto: CreateAlbumDto) {
+    return await this.albumService.create(createAlbumDto);
   }
 
   @Put(':uuid')
-  update(
+  async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateAlbumDto: UpdateAlbumDto,
   ) {
-    return this.albumService.update(uuid, updateAlbumDto);
+    return await this.albumService.update(uuid, updateAlbumDto);
   }
 
   @Delete(':uuid')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.albumService.remove(uuid);
+  async remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return await this.albumService.remove(uuid);
   }
 }
