@@ -27,7 +27,7 @@ export const checkItemExistence = (
 
 export const checkValidId = (itemId: string) => {
   if (!uuid.validate(itemId)) {
-    throw new BadRequestException('Received Id ${itemId} is not uuid');
+    throw new BadRequestException(`Received Id ${itemId} is not uuid`);
   }
 };
 

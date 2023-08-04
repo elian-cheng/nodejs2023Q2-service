@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: database-container
+    restart: always
+    build: ./database
+    ports:
+      - '${TYPEORM_PORT}:${TYPEORM_PORT}'
+    environment:
+      - POSTGRES_USER=${TYPEORM_USERNAME}
+      - POSTGRES_PASSWORD=${TYPEORM_PASSWORD}
+      - POSTGRES_DB=${TYPEORM_DATABASE}
+    networks:
+      - custom_network
+    command:
+      ['postgres', '-c', 'logging_collector=true', '-c', 'log_statement=all']
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  app:
+    container_name: hls-app-container
+    restart: always
+    build: .
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - HOST=${HOST}
+      - TYPEORM_CONNECTION=${TYPEORM_CONNECTION}
+      - TYPEORM_USERNAME=${TYPEORM_USERNAME}
+      - TYPEORM_PASSWORD=${TYPEORM_PASSWORD}
+      - TYPEORM_DATABASE=${TYPEORM_DATABASE}
+      - TYPEORM_PORT=${TYPEORM_PORT}
+      - TYPEORM_HOST=postgres
+    depends_on:
+      - postgres
+    networks:
+      - custom_network
+    volumes:
+      - ./src:/app/src
+volumes:
+  postgres-data:
+networks:
+  custom_network:
+    driver: bridge
