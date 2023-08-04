@@ -1,50 +1,52 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ModelNames } from 'src/utils/constants';
 import { checkItemExistence } from 'src/utils/validation';
+import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdatePasswordDto } from './dto/updateUser.dto';
 import User from './models/user.model';
 
-const USER = 'User';
-
 @Injectable()
 export class UserService {
-  private users: User[] = [];
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
 
-  findAll() {
-    return this.users;
+  async findAll() {
+    return await this.userRepository.find();
   }
 
-  findOne(id: string) {
-    checkItemExistence(this.users, id, USER);
-    const user = this.users.find((user) => user.id === id);
+  async findOne(userId: string) {
+    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     return user;
   }
 
-  create(createUserDto: CreateUserDto) {
-    const newUser = new User(createUserDto);
-    this.users.push(newUser);
+  async create(createUserDto: CreateUserDto) {
+    const createdUser = this.userRepository.create(createUserDto);
+    const newUser = await this.userRepository.save(createdUser);
     return newUser;
   }
 
-  update(id: string, updateUserDto: UpdatePasswordDto) {
-    checkItemExistence(this.users, id, USER);
-    const existingUser = this.users.find((user) => user.id === id);
-    this.isOldPasswordValid(existingUser, updateUserDto.oldPassword);
-    existingUser.password = updateUserDto.newPassword;
-    existingUser.version += 1;
-    existingUser.updatedAt = new Date().getTime();
-    return existingUser;
+  async update(userId: string, UpdatePasswordDto: UpdatePasswordDto) {
+    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    this.isOldPasswordValid(user, UpdatePasswordDto.oldPassword);
+    user.password = UpdatePasswordDto.newPassword;
+    const updatedUser = await this.userRepository.save(user);
+    return updatedUser;
   }
 
-  remove(id: string) {
-    const existingUserId = this.users.findIndex((user) => user.id === id);
-    checkItemExistence(this.users, id, USER);
-    this.users.splice(existingUserId, 1);
+  async remove(userId: string) {
+    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
+    await this.userRepository.delete(userId);
   }
 
   isOldPasswordValid(user: User, oldPassword: string) {
     if (user.password !== oldPassword) {
-      throw new ForbiddenException('Wrong old password');
+      throw new ForbiddenException(`Wrong old password`);
     }
   }
 }

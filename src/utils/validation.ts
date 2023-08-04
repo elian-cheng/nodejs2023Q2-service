@@ -4,19 +4,20 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import * as uuid from 'uuid';
+import { Repository } from 'typeorm';
 
 const SOURCE_NAMES = ['Album', 'Artist', 'Track', 'User'];
 
-export const checkItemExistence = (
-  allItems: any[],
+export const checkItemExistence = async (
+  allItems: Repository<any>,
   itemId: string,
   itemBelongsTo: string,
-  isInFavorites = false,
+  isFavs = false,
 ) => {
-  const ERROR_MESSAGE = `${itemBelongsTo} with :id ${itemId} is not found in database`;
-  const item = allItems.find((item) => item.id === itemId);
+  const ERROR_MESSAGE = `${itemBelongsTo} with :id ${itemId} was not found in database`;
+  const item = await allItems.findOne({ where: { id: itemId } });
 
-  if (isInFavorites && !item) {
+  if (isFavs && !item) {
     throw new UnprocessableEntityException(ERROR_MESSAGE);
   } else if (!item && SOURCE_NAMES.includes(itemBelongsTo)) {
     throw new NotFoundException(ERROR_MESSAGE);
@@ -32,7 +33,7 @@ export const checkValidId = (itemId: string) => {
 };
 
 export const checkItemValidation = (
-  allItems: any[],
+  allItems: Repository<any>,
   itemId: string,
   itemBelongsTo: string,
 ) => {
