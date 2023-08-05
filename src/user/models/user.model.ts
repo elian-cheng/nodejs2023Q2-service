@@ -1,41 +1,31 @@
-import { Exclude, Transform } from 'class-transformer';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-  VersionColumn,
-} from 'typeorm';
-
-interface IUser {
+import { User } from '@prisma/client';
+export interface IUserData {
   id: string;
   login: string;
-  password: string;
   version: number;
   createdAt: number;
   updatedAt: number;
 }
-@Entity()
-export default class User implements IUser {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+class UserData implements IUserData {
+  public id: string;
+  public login: string;
+  public version: number;
+  public createdAt: number;
+  public updatedAt: number;
 
-  @Column()
-  login: string;
-
-  @VersionColumn()
-  version: number;
-
-  @CreateDateColumn({ type: 'timestamp' })
-  @Transform((param) => +param.value)
-  createdAt: number;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  @Transform((param) => +param.value)
-  updatedAt: number;
-
-  @Column()
-  @Exclude()
-  password: string;
+  constructor(data: User) {
+    this.id = data.id;
+    this.login = data.login;
+    this.version = data.version;
+    this.createdAt = data.createdAt.valueOf();
+    this.updatedAt = data.updatedAt.valueOf();
+  }
 }
+
+export const prepareUserResponse = (data: User | User[]) => {
+  if (Array.isArray(data)) {
+    return data.map((item) => new UserData(item));
+  } else {
+    return new UserData(data);
+  }
+};

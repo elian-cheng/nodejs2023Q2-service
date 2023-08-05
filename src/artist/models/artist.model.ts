@@ -1,26 +1,25 @@
-import Album from 'src/album/models/album.model';
-import Track from 'src/track/models/track.model';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-
-interface IArtist {
+import { Artist } from '@prisma/client';
+export interface IArtistData {
   id: string;
   name: string;
   grammy: boolean;
 }
-@Entity()
-export default class Artist implements IArtist {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+class ArtistData implements IArtistData {
+  public id: string;
+  public name: string;
+  public grammy: boolean;
 
-  @Column()
-  name: string;
-
-  @Column()
-  grammy: boolean;
-
-  @OneToMany(() => Album, (album) => album.artist)
-  albums: Album[];
-
-  @OneToMany(() => Track, (track) => track.artist)
-  tracks: Track[];
+  constructor(data: Artist) {
+    this.id = data.id;
+    this.name = data.name;
+    this.grammy = data.grammy;
+  }
 }
+
+export const prepareArtistResponse = (data: Artist | Artist[]) => {
+  if (Array.isArray(data)) {
+    return data.map((item) => new ArtistData(item));
+  } else {
+    return new ArtistData(data);
+  }
+};

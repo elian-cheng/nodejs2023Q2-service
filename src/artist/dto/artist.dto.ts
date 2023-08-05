@@ -1,6 +1,6 @@
 import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateArtistDto {
+export class ArtistDTO {
   @IsString()
   @IsNotEmpty()
   name: string;

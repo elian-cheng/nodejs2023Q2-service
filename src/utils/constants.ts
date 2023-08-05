@@ -10,3 +10,5 @@ export const enum ModelIds {
   ARTIST_ID = 'artistId',
   TRACK_ID = 'trackId',
 }
+
+export const PRISMA_ERROR = 'P2025';

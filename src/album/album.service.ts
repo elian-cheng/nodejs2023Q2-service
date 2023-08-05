@@ -4,7 +4,7 @@ import { FavsService } from 'src/favs/favs.service';
 import { TrackService } from 'src/track/track.service';
 import { ModelIds, ModelNames } from 'src/utils/constants';
 import { checkItemExistence, checkValidId } from 'src/utils/validation';
-import { CreateAlbumDto } from './dto/createAlbum.dto';
+import { CreateAlbumDto } from './dto/album.dto';
 import { UpdateAlbumDto } from './dto/updateAlbum.dto';
 import Album from './models/album.model';
 import { Repository } from 'typeorm';

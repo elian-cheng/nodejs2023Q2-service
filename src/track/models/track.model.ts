@@ -1,48 +1,33 @@
-import Album from 'src/album/models/album.model';
-import Artist from 'src/artist/models/artist.model';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Track } from '@prisma/client';
 
-interface ITrack {
+export interface ITrackData {
   id: string;
   name: string;
   artistId: string | null;
   albumId: string | null;
   duration: number;
 }
-@Entity()
-export default class Track implements ITrack {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
 
-  @Column()
-  name: string;
+class TrackData implements ITrackData {
+  public id: string;
+  public name: string;
+  public artistId: string | null;
+  public albumId: string | null;
+  public duration: number;
 
-  @Column({ nullable: true })
-  artistId: string | null;
-
-  @Column({ nullable: true })
-  albumId: string | null;
-
-  @ManyToOne(() => Artist, (artist) => artist.tracks, {
-    cascade: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'artistId', referencedColumnName: 'id' })
-  artist: Artist;
-
-  @ManyToOne(() => Album, (album) => album.tracks, {
-    cascade: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'albumId', referencedColumnName: 'id' })
-  album: Album;
-
-  @Column('float')
-  duration: number;
+  constructor(data: Track) {
+    this.id = data.id;
+    this.name = data.name;
+    this.artistId = data.artistId;
+    this.albumId = data.albumId;
+    this.duration = data.duration;
+  }
 }
+
+export const prepareTrackResponse = (data: Track | Track[]) => {
+  if (Array.isArray(data)) {
+    return data.map((item) => new TrackData(item));
+  } else {
+    return new TrackData(data);
+  }
+};

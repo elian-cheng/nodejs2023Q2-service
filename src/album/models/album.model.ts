@@ -1,41 +1,30 @@
-import Artist from 'src/artist/models/artist.model';
-import Track from 'src/track/models/track.model';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-interface IAlbum {
+import { Album } from '@prisma/client';
+
+export interface IAlbumData {
   id: string;
   name: string;
   year: number;
   artistId: string | null;
 }
 
-@Entity()
-export default class Album implements IAlbum {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+class AlbumData implements IAlbumData {
+  public id: string;
+  public name: string;
+  public year: number;
+  public artistId: string | null;
 
-  @Column()
-  name: string;
-
-  @Column()
-  year: number;
-
-  @Column({ nullable: true })
-  artistId: string | null;
-
-  @ManyToOne(() => Artist, (artist) => artist.id, {
-    cascade: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'artistId', referencedColumnName: 'id' })
-  artist: Artist;
-
-  @OneToMany(() => Track, (track) => track.album)
-  tracks: Track[];
+  constructor(data: Album) {
+    this.id = data.id;
+    this.name = data.name;
+    this.year = data.year;
+    this.artistId = data.artistId;
+  }
 }
+
+export const prepareAlbumResponse = (data: Album | Album[]) => {
+  if (Array.isArray(data)) {
+    return data.map((item) => new AlbumData(item));
+  } else {
+    return new AlbumData(data);
+  }
+};
