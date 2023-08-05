@@ -1,107 +1,76 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { AlbumService } from 'src/album/album.service';
-import { ArtistService } from 'src/artist/artist.service';
-import { FavsService } from 'src/favs/favs.service';
-import { ModelIds, ModelNames } from 'src/utils/constants';
-import { checkItemExistence, checkValidId } from 'src/utils/validation';
-import { CreateTrackDto } from './dto/createTrack.dto';
-import { UpdateTrackDto } from './dto/updateTrack.dto';
-import Track from './models/track.model';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ITrackData, prepareTrackResponse } from './models/track.model';
+import { TrackDTO } from './dto/track.dto';
+import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class TrackService {
-  constructor(
-    @InjectRepository(Track)
-    private trackRepository: Repository<Track>,
-    @Inject(forwardRef(() => ArtistService))
-    private artistService: ArtistService,
-    @Inject(forwardRef(() => AlbumService))
-    private albumService: AlbumService,
-    @Inject(forwardRef(() => FavsService))
-    private favsService: FavsService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return await this.trackRepository.find();
+  async getTracks(): Promise<ITrackData | ITrackData[]> {
+    const tracks = await this.prisma.track.findMany();
+
+    return prepareTrackResponse(tracks);
   }
 
-  async findOne(trackId: string) {
-    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
-    const track = await this.trackRepository.findOne({
-      where: { id: trackId },
-    });
-    return track;
-  }
-
-  async create(createTrackDto: CreateTrackDto) {
-    const createdTrack = this.trackRepository.create(createTrackDto);
-
-    if (createdTrack.albumId !== null) {
-      await this.albumService.checkAlbumExistence(createdTrack.albumId);
-    }
-    if (createdTrack.artistId !== null) {
-      await this.artistService.checkArtistExistence(createdTrack.artistId);
-    }
-
-    const newTrack = await this.trackRepository.save(createdTrack);
-
-    return newTrack;
-  }
-
-  async update(trackId: string, updateTrackDto: UpdateTrackDto) {
-    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
-
-    const track = await this.trackRepository.findOne({
+  async getTrack(trackId: string): Promise<ITrackData | ITrackData[]> {
+    const response = await this.prisma.track.findUnique({
       where: { id: trackId },
     });
 
-    for (const key in track) {
-      if (updateTrackDto[key]) {
-        if (key === ModelIds.ARTIST_ID) {
-          const artistId = updateTrackDto[key];
-          checkValidId(artistId);
-          await this.artistService.checkArtistExistence(artistId);
-        } else if (key === ModelIds.ALBUM_ID) {
-          const albumId = updateTrackDto[key];
-          checkValidId(albumId);
-          await this.albumService.checkAlbumExistence(albumId);
+    if (!response) throw new NotFoundException();
+
+    return prepareTrackResponse(response);
+  }
+
+  async createTrack(dto: TrackDTO): Promise<ITrackData | ITrackData[]> {
+    const track = await this.prisma.track.create({
+      data: {
+        name: dto.name,
+        artistId: dto.artistId,
+        albumId: dto.albumId,
+        duration: dto.duration,
+        favorite: false,
+      },
+    });
+
+    return prepareTrackResponse(track);
+  }
+
+  async updateTrackInfo(
+    trackId: string,
+    dto: TrackDTO,
+  ): Promise<ITrackData | ITrackData[]> {
+    const response = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
+
+    if (!response) throw new NotFoundException();
+
+    const updatedTrack = await this.prisma.track.update({
+      where: { id: trackId },
+      data: {
+        name: dto.name,
+        artistId: dto.artistId,
+        albumId: dto.albumId,
+        duration: dto.duration,
+      },
+    });
+
+    return prepareTrackResponse(updatedTrack);
+  }
+
+  async deleteTrack(trackId: string) {
+    try {
+      await this.prisma.track.delete({ where: { id: trackId } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
         }
-
-        track[key] = updateTrackDto[key];
       }
     }
-
-    const updatedTrack = await this.trackRepository.save(track);
-
-    return updatedTrack;
-  }
-
-  async remove(trackId: string) {
-    await checkItemExistence(this.trackRepository, trackId, ModelNames.TRACK);
-    await this.trackRepository.delete(trackId);
-  }
-
-  async getTracksById(tracksIdsArray: string[]) {
-    const tracksArray = [];
-
-    tracksIdsArray.forEach(async (trackId) => {
-      const track = await this.trackRepository.find({
-        where: { id: trackId },
-      })[0];
-      tracksArray.push(track);
-    });
-
-    return tracksArray;
-  }
-
-  async checkTrackExistence(trackId: string, isFavs = false) {
-    await checkItemExistence(
-      this.trackRepository,
-      trackId,
-      ModelNames.TRACK,
-      isFavs,
-    );
   }
 }

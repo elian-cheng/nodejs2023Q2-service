@@ -1,52 +1,75 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ModelNames } from 'src/utils/constants';
-import { checkItemExistence } from 'src/utils/validation';
-import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UpdatePasswordDto } from './dto/updateUser.dto';
-import User from './models/user.model';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { IUserData, prepareUserResponse } from './models/user.model';
+import { CreateUserDTO } from './dto/createUser.dto';
+import { UpdatePasswordDTO } from './dto/updateUser.dto';
+import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return await this.userRepository.find();
+  async getUsers(): Promise<IUserData | IUserData[]> {
+    const users = await this.prisma.user.findMany();
+
+    return prepareUserResponse(users);
   }
 
-  async findOne(userId: string) {
-    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    return user;
+  async getUser(userId: string): Promise<IUserData | IUserData[]> {
+    const response = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!response) throw new NotFoundException();
+
+    return prepareUserResponse(response);
   }
 
-  async create(createUserDto: CreateUserDto) {
-    const createdUser = this.userRepository.create(createUserDto);
-    const newUser = await this.userRepository.save(createdUser);
-    return newUser;
+  async createUser(dto: CreateUserDTO): Promise<IUserData | IUserData[]> {
+    const user = await this.prisma.user.create({
+      data: {
+        login: dto.login,
+        password: dto.password,
+        version: 1,
+      },
+    });
+
+    return prepareUserResponse(user);
   }
 
-  async update(userId: string, UpdatePasswordDto: UpdatePasswordDto) {
-    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    this.isOldPasswordValid(user, UpdatePasswordDto.oldPassword);
-    user.password = UpdatePasswordDto.newPassword;
-    const updatedUser = await this.userRepository.save(user);
-    return updatedUser;
+  async updateUserPassword(
+    userId: string,
+    dto: UpdatePasswordDTO,
+  ): Promise<IUserData | IUserData[]> {
+    const response = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!response) throw new NotFoundException();
+    if (response.password !== dto.oldPassword) throw new ForbiddenException();
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: dto.newPassword, version: (response.version += 1) },
+    });
+
+    return prepareUserResponse(updatedUser);
   }
 
-  async remove(userId: string) {
-    await checkItemExistence(this.userRepository, userId, ModelNames.USER);
-    await this.userRepository.delete(userId);
-  }
-
-  isOldPasswordValid(user: User, oldPassword: string) {
-    if (user.password !== oldPassword) {
-      throw new ForbiddenException(`Wrong old password`);
+  async deleteUser(userId: string) {
+    try {
+      await this.prisma.user.delete({ where: { id: userId } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
+        }
+      }
     }
   }
 }

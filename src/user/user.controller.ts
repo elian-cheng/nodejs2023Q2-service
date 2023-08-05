@@ -1,6 +1,5 @@
 import {
   Body,
-  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -10,45 +9,42 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UpdatePasswordDto } from './dto/updateUser.dto';
 import { UserService } from './user.service';
+import { CreateUserDTO } from './dto/createUser.dto';
+import { UpdatePasswordDTO } from './dto/updateUser.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
-  @UseInterceptors(ClassSerializerInterceptor)
+  constructor(private userService: UserService) {}
+
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  getUsers() {
+    return this.userService.getUsers();
   }
 
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Get(':uuid')
-  async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.userService.findOne(uuid);
+  @Get(':id')
+  getUser(@Param('id', ParseUUIDPipe) id: string) {
+    return this.userService.getUser(id);
   }
 
-  @UseInterceptors(ClassSerializerInterceptor)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  createUser(@Body(ValidationPipe) dto: CreateUserDTO) {
+    return this.userService.createUser(dto);
   }
 
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Put(':uuid')
-  update(
-    @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @Body() updateUserDto: UpdatePasswordDto,
+  @Put(':id')
+  updateUserPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) dto: UpdatePasswordDTO,
   ) {
-    return this.userService.update(uuid, updateUserDto);
+    return this.userService.updateUserPassword(id, dto);
   }
 
-  @Delete(':uuid')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.userService.remove(uuid);
+  @Delete(':id')
+  deleteUser(@Param('id', ParseUUIDPipe) id: string) {
+    return this.userService.deleteUser(id);
   }
 }
