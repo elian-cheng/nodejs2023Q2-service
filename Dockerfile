@@ -1,7 +1,15 @@
 FROM node:18.17-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install && npm cache clean --force
+
+COPY prisma ./prisma/
+
+RUN npm ci
+
 COPY . .
+
 EXPOSE ${PORT}
-CMD ["npm", "run", "start:dev"]
+
+CMD ["npm", "run", "start:migrate:dev"]

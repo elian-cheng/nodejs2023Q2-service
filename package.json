@@ -20,9 +20,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "docker": "docker-compose up",
-    "docker:test": "docker exec app-container npm run test",
-    "scan:app": "docker scan hls-app-container",
-    "scan:postgres": "docker scan database-container"
+    "docker:test": "docker exec home-library-app npm run test",
+    "scan:app": "docker scan oleandera/home-library-app",
+    "scan:db": "docker scan oleandera/home-library-db",
+    "start:migrate:dev": "prisma migrate deploy && npm run start:dev",
+    "prisma:dev:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
@@ -32,19 +34,18 @@
     "@nestjs/mapped-types": "^1.0.1",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/swagger": "^5.2.1",
-    "@nestjs/typeorm": "^10.0.0",
+    "@prisma/client": "^5.1.1",
     "bcrypt": "^5.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "dotenv": "^16.0.1",
     "http-status-codes": "^2.2.0",
     "js-yaml": "^4.1.0",
-    "pg": "^8.11.2",
+    "prisma": "^5.1.1",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
     "swagger-ui-express": "^5.0.0",
-    "typeorm": "^0.3.17",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
