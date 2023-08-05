@@ -1,118 +1,137 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { AlbumService } from 'src/album/album.service';
-import Album from 'src/album/models/album.model';
-import { ArtistService } from 'src/artist/artist.service';
-import Artist from 'src/artist/models/artist.model';
-import Track from 'src/track/models/track.model';
-import { TrackService } from 'src/track/track.service';
-import { ModelNames } from 'src/utils/constants';
-import { responseOnSuccess } from 'src/utils/validation';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import FavsAlbums from './models/favsAlbums.model';
-import FavsArtists from './models/favsArtists.model';
-import FavsTracks from './models/favsTracks.model';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { IAlbumData, prepareAlbumResponse } from 'src/album/models/album.model';
+import {
+  IArtistData,
+  prepareArtistResponse,
+} from 'src/artist/models/artist.model';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ITrackData, prepareTrackResponse } from 'src/track/models/track.model';
+import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class FavsService {
-  constructor(
-    @InjectRepository(FavsArtists)
-    private favsArtistsRepository: Repository<FavsArtists>,
-    @InjectRepository(FavsAlbums)
-    private favsAlbumsRepository: Repository<FavsAlbums>,
-    @InjectRepository(FavsTracks)
-    private favsTracksRepository: Repository<FavsTracks>,
-    @Inject(forwardRef(() => ArtistService))
-    private artistService: ArtistService,
-    @Inject(forwardRef(() => AlbumService))
-    private albumService: AlbumService,
-    @Inject(forwardRef(() => TrackService))
-    private trackService: TrackService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    const favsResponse: {
-      artists: Artist[] | undefined[];
-      albums: Album[] | undefined[];
-      tracks: Track[] | undefined[];
-    } = {
-      artists: [],
-      albums: [],
-      tracks: [],
+  async getFavorites(): Promise<{
+    artists: IArtistData | IArtistData[];
+    albums: IAlbumData | IAlbumData[];
+    tracks: ITrackData | ITrackData[];
+  }> {
+    const artists = await this.prisma.artist.findMany({
+      where: { favorite: true },
+    });
+    const albums = await this.prisma.album.findMany({
+      where: { favorite: true },
+    });
+    const tracks = await this.prisma.track.findMany({
+      where: { favorite: true },
+    });
+
+    return {
+      artists: prepareArtistResponse(artists),
+      albums: prepareAlbumResponse(albums),
+      tracks: prepareTrackResponse(tracks),
     };
-
-    const artists = await this.favsArtistsRepository.find();
-    const albums = await this.favsAlbumsRepository.find();
-    const tracks = await this.favsTracksRepository.find();
-
-    favsResponse.artists = artists.map((el) => el.artist);
-    favsResponse.albums = albums.map((el) => el.album);
-    favsResponse.tracks = tracks.map((el) => el.track);
-
-    return favsResponse;
   }
 
-  async addArtistToFavs(id: string) {
-    await this.artistService.checkArtistExistence(id, true);
-    const artist = await this.artistService.findOne(id);
-    const createdFavsArtist = this.favsArtistsRepository.create({ artist });
-    await this.favsArtistsRepository.save(createdFavsArtist);
-    return responseOnSuccess(ModelNames.ARTIST, id);
+  async addFavTrack(trackId: string): Promise<ITrackData | ITrackData[]> {
+    try {
+      const response = await this.prisma.track.update({
+        where: { id: trackId },
+        data: { favorite: true },
+      });
+
+      return prepareTrackResponse(response);
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new UnprocessableEntityException();
+        }
+      }
+    }
   }
 
-  async addAlbumsToFavs(id: string) {
-    await this.albumService.checkAlbumExistence(id, true);
-    const album = await this.albumService.findOne(id);
-    const createdFavsAlbum = this.favsAlbumsRepository.create({ album });
-    await this.favsAlbumsRepository.save(createdFavsAlbum);
-    return responseOnSuccess(ModelNames.ALBUM, id);
+  async deleteFavTrack(trackId: string) {
+    try {
+      await this.prisma.track.update({
+        where: { id: trackId },
+        data: { favorite: false },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
+        }
+      }
+    }
   }
 
-  async addTracksToFavs(id: string) {
-    await this.trackService.checkTrackExistence(id, true);
+  async addFavAlbum(albumId: string): Promise<IAlbumData | IAlbumData[]> {
+    try {
+      const response = await this.prisma.album.update({
+        where: { id: albumId },
+        data: { favorite: true },
+      });
 
-    const track = await this.trackService.findOne(id);
-    const createdFavsTrack = this.favsTracksRepository.create({ track });
-    await this.favsTracksRepository.save(createdFavsTrack);
-    return responseOnSuccess(ModelNames.TRACK, id);
+      return prepareAlbumResponse(response);
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new UnprocessableEntityException();
+        }
+      }
+    }
   }
 
-  async removeTrackFromFavs(id: string) {
-    await this.trackService.checkTrackExistence(id, true);
-    const favTrackId = await this.findTrackInFavs(id);
-    await this.favsTracksRepository.delete(favTrackId);
+  async deleteFavAlbum(albumId: string) {
+    try {
+      await this.prisma.album.update({
+        where: { id: albumId },
+        data: { favorite: false },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
+        }
+      }
+    }
   }
 
-  async removeArtistFromFavs(id: string) {
-    await this.artistService.checkArtistExistence(id, true);
-    const favArtistId = await this.findArtistInFavs(id);
-    await this.favsArtistsRepository.delete(favArtistId);
+  async addFavArtist(artistId: string): Promise<IArtistData | IArtistData[]> {
+    try {
+      const response = await this.prisma.artist.update({
+        where: { id: artistId },
+        data: { favorite: true },
+      });
+
+      return prepareArtistResponse(response);
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new UnprocessableEntityException();
+        }
+      }
+    }
   }
 
-  async removeAlbumFromFavs(id: string) {
-    await this.albumService.checkAlbumExistence(id, true);
-    const favAlbumId = await this.findAlbumInFavs(id);
-    await this.favsAlbumsRepository.delete(favAlbumId);
-  }
-
-  async findArtistInFavs(id: string) {
-    const favArtists = await this.favsArtistsRepository.findOne({
-      where: { artist: { id: id } },
-    });
-    return favArtists.id;
-  }
-
-  async findAlbumInFavs(id: string) {
-    const favAlbum = await this.favsAlbumsRepository.findOne({
-      where: { album: { id: id } },
-    });
-    return favAlbum.id;
-  }
-
-  async findTrackInFavs(id: string) {
-    const favTrack = await this.favsTracksRepository.findOne({
-      where: { track: { id: id } },
-    });
-    return favTrack.id;
+  async deleteFavArtist(artistId: string) {
+    try {
+      await this.prisma.artist.update({
+        where: { id: artistId },
+        data: { favorite: false },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
+        }
+      }
+    }
   }
 }

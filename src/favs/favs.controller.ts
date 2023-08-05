@@ -12,43 +12,43 @@ import { FavsService } from './favs.service';
 
 @Controller('favs')
 export class FavsController {
-  constructor(private readonly favsService: FavsService) {}
+  constructor(private favsService: FavsService) {}
 
   @Get()
-  findAll() {
-    return this.favsService.findAll();
+  getAlbums() {
+    return this.favsService.getFavorites();
   }
 
-  @Post('artist/:uuid')
-  addArtistToFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.addArtistToFavs(uuid);
+  @Post('track/:id')
+  addFavTrack(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.addFavTrack(id);
   }
 
-  @Post('album/:uuid')
-  addAlbumsToFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.addAlbumsToFavs(uuid);
-  }
-
-  @Post('track/:uuid')
-  addTracksToFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.addTracksToFavs(uuid);
-  }
-
-  @Delete('track/:uuid')
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeTrackFromFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.removeTrackFromFavs(uuid);
+  @Delete('track/:id')
+  deleteFavTrack(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.deleteFavTrack(id);
   }
 
-  @Delete('artist/:uuid')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  removeArtistFromFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.removeArtistFromFavs(uuid);
+  @Post('album/:id')
+  addFavAlbum(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.addFavAlbum(id);
   }
 
-  @Delete('album/:uuid')
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeAlbumFromFavs(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.favsService.removeAlbumFromFavs(uuid);
+  @Delete('album/:id')
+  deleteFavAlbum(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.deleteFavAlbum(id);
+  }
+
+  @Post('artist/:id')
+  addFavArtist(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.addFavArtist(id);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete('artist/:id')
+  deleteFavArtist(@Param('id', ParseUUIDPipe) id: string) {
+    return this.favsService.deleteFavArtist(id);
   }
 }
