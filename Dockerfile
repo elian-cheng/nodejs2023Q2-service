@@ -6,7 +6,7 @@ COPY package*.json ./
 
 COPY prisma ./prisma/
 
-RUN npm ci
+RUN npm install && npm cache clean --force
 
 COPY . .
 
