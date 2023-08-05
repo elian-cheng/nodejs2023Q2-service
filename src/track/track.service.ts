@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ITrackData, prepareTrackResponse } from './models/track.model';
 import { TrackDTO } from './dto/track.dto';
-import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class TrackService {
@@ -64,13 +62,16 @@ export class TrackService {
 
   async deleteTrack(trackId: string) {
     try {
+      const track = await this.prisma.track.findUnique({
+        where: { id: trackId },
+      });
+      if (!track) {
+        throw new NotFoundException(`Track with id ${trackId} not found`);
+      }
+
       await this.prisma.track.delete({ where: { id: trackId } });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
-      }
+      throw error;
     }
   }
 }

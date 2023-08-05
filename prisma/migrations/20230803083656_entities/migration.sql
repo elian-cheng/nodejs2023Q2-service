@@ -1,14 +1,3 @@
--- CreateTable
-CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
-    "login" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
-    "version" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
 
 -- CreateTable
 CREATE TABLE "artists" (
@@ -51,3 +40,7 @@ ALTER TABLE "tracks" ADD CONSTRAINT "tracks_artistId_fkey" FOREIGN KEY ("artistI
 
 -- AddForeignKey
 ALTER TABLE "tracks" ADD CONSTRAINT "tracks_albumId_fkey" FOREIGN KEY ("albumId") REFERENCES "albums"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AlterTable
+ALTER TABLE "albums" DROP COLUMN "year",
+ADD COLUMN     "year" INTEGER NOT NULL;

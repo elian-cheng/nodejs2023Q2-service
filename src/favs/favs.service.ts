@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { IAlbumData, prepareAlbumResponse } from 'src/album/models/album.model';
 import {
   IArtistData,
@@ -11,7 +6,6 @@ import {
 } from 'src/artist/models/artist.model';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ITrackData, prepareTrackResponse } from 'src/track/models/track.model';
-import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class FavsService {
@@ -41,6 +35,15 @@ export class FavsService {
 
   async addFavTrack(trackId: string): Promise<ITrackData | ITrackData[]> {
     try {
+      const track = await this.prisma.track.findUnique({
+        where: { id: trackId },
+      });
+      if (!track) {
+        throw new UnprocessableEntityException(
+          `Track with id ${trackId} not found`,
+        );
+      }
+
       const response = await this.prisma.track.update({
         where: { id: trackId },
         data: { favorite: true },
@@ -48,11 +51,7 @@ export class FavsService {
 
       return prepareTrackResponse(response);
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new UnprocessableEntityException();
-        }
-      }
+      throw error;
     }
   }
 
@@ -63,16 +62,21 @@ export class FavsService {
         data: { favorite: false },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
-      }
+      throw error;
     }
   }
 
   async addFavAlbum(albumId: string): Promise<IAlbumData | IAlbumData[]> {
     try {
+      const album = await this.prisma.album.findUnique({
+        where: { id: albumId },
+      });
+      if (!album) {
+        throw new UnprocessableEntityException(
+          `Album with id ${albumId} not found`,
+        );
+      }
+
       const response = await this.prisma.album.update({
         where: { id: albumId },
         data: { favorite: true },
@@ -80,11 +84,7 @@ export class FavsService {
 
       return prepareAlbumResponse(response);
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new UnprocessableEntityException();
-        }
-      }
+      throw error;
     }
   }
 
@@ -95,16 +95,21 @@ export class FavsService {
         data: { favorite: false },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
-      }
+      throw error;
     }
   }
 
   async addFavArtist(artistId: string): Promise<IArtistData | IArtistData[]> {
     try {
+      const artist = await this.prisma.artist.findUnique({
+        where: { id: artistId },
+      });
+      if (!artist) {
+        throw new UnprocessableEntityException(
+          `Artist with id ${artistId} not found`,
+        );
+      }
+
       const response = await this.prisma.artist.update({
         where: { id: artistId },
         data: { favorite: true },
@@ -112,11 +117,7 @@ export class FavsService {
 
       return prepareArtistResponse(response);
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new UnprocessableEntityException();
-        }
-      }
+      throw error;
     }
   }
 
@@ -127,11 +128,7 @@ export class FavsService {
         data: { favorite: false },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
-      }
+      throw error;
     }
   }
 }

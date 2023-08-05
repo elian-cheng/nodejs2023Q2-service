@@ -11,8 +11,8 @@ import {
   Put,
   ValidationPipe,
 } from '@nestjs/common';
-import { TrackDTO } from './dto';
 import { TrackService } from './track.service';
+import { TrackDTO } from './dto/track.dto';
 
 @Controller('track')
 export class TrackController {

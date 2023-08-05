@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IArtistData, prepareArtistResponse } from './models/artist.model';
 import { ArtistDTO } from './dto/artist.dto';
-import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class ArtistService {
@@ -57,13 +55,17 @@ export class ArtistService {
 
   async deleteArtist(artistId: string) {
     try {
-      await this.prisma.artist.delete({ where: { id: artistId } });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
+      const artist = await this.prisma.artist.findUnique({
+        where: { id: artistId },
+      });
+      if (!artist) {
+        throw new NotFoundException(`Artist with id ${artistId} not found`);
       }
+
+      await this.prisma.artist.delete({ where: { id: artistId } });
+      return true;
+    } catch (error) {
+      throw error;
     }
   }
 }

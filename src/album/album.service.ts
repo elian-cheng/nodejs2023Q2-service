@@ -1,9 +1,7 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IAlbumData, prepareAlbumResponse } from './models/album.model';
 import { AlbumDTO } from './dto/album.dto';
-import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class AlbumService {
@@ -58,13 +56,17 @@ export class AlbumService {
 
   async deleteAlbum(albumId: string) {
     try {
-      await this.prisma.album.delete({ where: { id: albumId } });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
+      const album = await this.prisma.album.findUnique({
+        where: { id: albumId },
+      });
+      if (!album) {
+        throw new NotFoundException(`Album with id ${albumId} not found`);
       }
+
+      await this.prisma.album.delete({ where: { id: albumId } });
+      return true;
+    } catch (error) {
+      throw error;
     }
   }
 }

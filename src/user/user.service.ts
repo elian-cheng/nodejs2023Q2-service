@@ -4,11 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { IUserData, prepareUserResponse } from './models/user.model';
 import { CreateUserDTO } from './dto/createUser.dto';
 import { UpdatePasswordDTO } from './dto/updateUser.dto';
-import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class UserService {
@@ -63,13 +61,13 @@ export class UserService {
 
   async deleteUser(userId: string) {
     try {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException(`User with id ${userId} not found`);
+      }
       await this.prisma.user.delete({ where: { id: userId } });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === PRISMA_ERROR) {
-          throw new NotFoundException();
-        }
-      }
+      throw error;
     }
   }
 }
