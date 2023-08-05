@@ -13,6 +13,7 @@ Repository for Home Library Service task at RS School's NodeJS 2023 Q2 course.
 ```
 git clone https://github.com/elian-cheng/nodejs2023Q2-service.git
 ```
+
 ### Move to the app folder
 
 ```
@@ -22,7 +23,7 @@ cd nodejs2023Q2-service
 ### Switch to the necessary branch
 
 ```
-git checkout part-1
+git checkout part-2
 ```
 
 ### Install NPM modules
@@ -31,22 +32,48 @@ git checkout part-1
 npm install
 ```
 
-### Run the application
+### Before starting app
+
+Rename `.env.example` file in the root of the project to `.env`
+
+### Running application
 
 ```
 npm start
 ```
 
-Application start on `http://localhost:4000` by default. You can change the port in .env file. There is an `example.env` file in the root of the project, remove the `example` prefix and you can use it.
+Application start on `http://localhost:4000` by default. You can change the port in .env file.
 
-### How to work with the app
+### Running application with Docker
+
+1. Before starting application run Docker Desktop
+2. To start app
+
+```
+npm run docker
+```
+
+3. To run tests  
+   After build images with command 'npm run docker' you can open another terminal and run the tests using the command:
+
+```
+npm run docker:test
+```
+
+4. Vulnerability scanning for images:  
+   After build images with command 'npm run docker' you can see the vulnerabilities in the Docker Desktop App by clicking on the image name
+   or by clicking on the Docker Scout in the menu and choosing the image in the dropdown select provided on the dashboard
+
+### Working with the application
+
+You can work with the application:
 
 1. Using Postman.
-2. Using the capabilities of the Open API - `http://localhost:4000/doc/` address in your browser.
+2. Using the capabilities of the Open API using `http://localhost:4000/doc/` address in your browser.
 
 ## API
 
-Available endpoints:
+Implemented endpoints:
 
 `/user` route - to operate with `Users`:
 
@@ -67,8 +94,8 @@ Available endpoints:
 
   ```
   {
-    oldPassword: string,
-    newPassword: string,
+    oldPassword: string, // previous password
+    newPassword: string, // new password
   }
   ```
 

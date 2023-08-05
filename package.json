@@ -21,8 +21,6 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "docker": "docker-compose up",
     "docker:test": "docker exec home-library-app npm run test",
-    "scan:app": "docker scan oleandera/home-library-app",
-    "scan:db": "docker scan oleandera/home-library-db",
     "start:migrate:dev": "prisma migrate deploy && npm run start:dev",
     "prisma:dev:deploy": "prisma migrate deploy"
   },
