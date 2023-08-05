@@ -1,95 +1,70 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { ArtistService } from 'src/artist/artist.service';
-import { FavsService } from 'src/favs/favs.service';
-import { TrackService } from 'src/track/track.service';
-import { ModelIds, ModelNames } from 'src/utils/constants';
-import { checkItemExistence, checkValidId } from 'src/utils/validation';
-import { CreateAlbumDto } from './dto/album.dto';
-import { UpdateAlbumDto } from './dto/updateAlbum.dto';
-import Album from './models/album.model';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { IAlbumData, prepareAlbumResponse } from './models/album.model';
+import { AlbumDTO } from './dto/album.dto';
+import { PRISMA_ERROR } from 'src/utils/constants';
+
 @Injectable()
 export class AlbumService {
-  constructor(
-    @InjectRepository(Album)
-    private albumRepository: Repository<Album>,
-    @Inject(forwardRef(() => TrackService))
-    private trackService: TrackService,
-    @Inject(forwardRef(() => ArtistService))
-    private artistService: ArtistService,
-    @Inject(forwardRef(() => FavsService))
-    private favsService: FavsService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return await this.albumRepository.find();
+  async getAlbums(): Promise<IAlbumData | IAlbumData[]> {
+    const albums = await this.prisma.album.findMany();
+
+    return prepareAlbumResponse(albums);
   }
 
-  async findOne(albumId: string) {
-    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
-    const album = await this.albumRepository.findOne({
-      where: { id: albumId },
-    });
-    return album;
-  }
-
-  async create(createAlbumDto: CreateAlbumDto) {
-    const createdAlbum = this.albumRepository.create(createAlbumDto);
-
-    if (createdAlbum.artistId !== null) {
-      await this.artistService.checkArtistExistence(createdAlbum.artistId);
-    }
-    const newAlbum = await this.albumRepository.save(createdAlbum);
-    return newAlbum;
-  }
-
-  async update(albumId: string, updateAlbumDto: UpdateAlbumDto) {
-    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
-    const album = await this.albumRepository.findOne({
+  async getAlbum(albumId: string): Promise<IAlbumData | IAlbumData[]> {
+    const response = await this.prisma.album.findUnique({
       where: { id: albumId },
     });
 
-    for (const key in album) {
-      if (updateAlbumDto[key]) {
-        if (key === ModelIds.ARTIST_ID) {
-          const artistId = updateAlbumDto[key];
-          checkValidId(artistId);
-          await this.artistService.checkArtistExistence(artistId);
+    if (!response) throw new NotFoundException();
+
+    return prepareAlbumResponse(response);
+  }
+
+  async createAlbum(dto: AlbumDTO): Promise<IAlbumData | IAlbumData[]> {
+    const album = await this.prisma.album.create({
+      data: {
+        name: dto.name,
+        year: dto.year,
+        artistId: dto.artistId,
+        favorite: false,
+      },
+    });
+
+    return prepareAlbumResponse(album);
+  }
+
+  async updateAlbumInfo(
+    albumId: string,
+    dto: AlbumDTO,
+  ): Promise<IAlbumData | IAlbumData[]> {
+    const response = await this.prisma.album.findUnique({
+      where: { id: albumId },
+    });
+
+    if (!response) throw new NotFoundException();
+
+    const updatedArtist = await this.prisma.album.update({
+      where: { id: albumId },
+      data: { name: dto.name, year: dto.year, artistId: dto.artistId },
+    });
+
+    return prepareAlbumResponse(updatedArtist);
+  }
+
+  async deleteAlbum(albumId: string) {
+    try {
+      await this.prisma.album.delete({ where: { id: albumId } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
         }
-        album[key] = updateAlbumDto[key];
       }
     }
-
-    const updatedAlbum = await this.albumRepository.save(album);
-
-    return updatedAlbum;
-  }
-
-  async remove(albumId: string) {
-    await checkItemExistence(this.albumRepository, albumId, ModelNames.ALBUM);
-    await this.albumRepository.delete(albumId);
-  }
-
-  async getAlbumsById(albumsIdsArray: string[]) {
-    const albumsArray = [];
-
-    albumsIdsArray.forEach(async (albumId) => {
-      const album = await this.albumRepository.find({
-        where: { id: albumId },
-      })[0];
-      albumsArray.push(album);
-    });
-
-    return albumsArray;
-  }
-
-  async checkAlbumExistence(albumId: string, isFavs = false) {
-    await checkItemExistence(
-      this.albumRepository,
-      albumId,
-      ModelNames.ALBUM,
-      isFavs,
-    );
   }
 }

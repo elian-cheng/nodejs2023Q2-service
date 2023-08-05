@@ -1,105 +1,69 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { AlbumService } from 'src/album/album.service';
-import { FavsService } from 'src/favs/favs.service';
-import { TrackService } from 'src/track/track.service';
-import { ModelNames } from 'src/utils/constants';
-import { checkItemExistence } from 'src/utils/validation';
-import { CreateArtistDto } from './dto/createArtist.dto';
-import { UpdateArtistDto } from './dto/updateArtist.dto';
-import Artist from './models/artist.model';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { IArtistData, prepareArtistResponse } from './models/artist.model';
+import { ArtistDTO } from './dto/artist.dto';
+import { PRISMA_ERROR } from 'src/utils/constants';
 
 @Injectable()
 export class ArtistService {
-  constructor(
-    @InjectRepository(Artist)
-    private artistRepository: Repository<Artist>,
-    @Inject(forwardRef(() => TrackService))
-    private trackService: TrackService,
-    @Inject(forwardRef(() => AlbumService))
-    private albumService: AlbumService,
-    @Inject(forwardRef(() => FavsService))
-    private favsService: FavsService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return await this.artistRepository.find();
+  async getArtists(): Promise<IArtistData | IArtistData[]> {
+    const artists = await this.prisma.artist.findMany();
+
+    return prepareArtistResponse(artists);
   }
 
-  async findOne(artistId: string) {
-    await checkItemExistence(
-      this.artistRepository,
-      artistId,
-      ModelNames.ARTIST,
-    );
-
-    const artist = await this.artistRepository.findOne({
+  async getArtist(artistId: string): Promise<IArtistData | IArtistData[]> {
+    const response = await this.prisma.artist.findUnique({
       where: { id: artistId },
     });
 
-    return artist;
+    if (!response) throw new NotFoundException();
+
+    return prepareArtistResponse(response);
   }
 
-  async create(createArtistDto: CreateArtistDto) {
-    const createdAlbum = this.artistRepository.create(createArtistDto);
+  async createArtist(dto: ArtistDTO): Promise<IArtistData | IArtistData[]> {
+    const artist = await this.prisma.artist.create({
+      data: {
+        name: dto.name,
+        grammy: dto.grammy,
+        favorite: false,
+      },
+    });
 
-    const newArtist = await this.artistRepository.save(createdAlbum);
-    return newArtist;
+    return prepareArtistResponse(artist);
   }
 
-  async update(artistId: string, updateArtistDto: UpdateArtistDto) {
-    await checkItemExistence(
-      this.artistRepository,
-      artistId,
-      ModelNames.ARTIST,
-    );
-
-    const artist = await this.artistRepository.findOne({
+  async updateArtistInfo(
+    artistId: string,
+    dto: ArtistDTO,
+  ): Promise<IArtistData | IArtistData[]> {
+    const response = await this.prisma.artist.findUnique({
       where: { id: artistId },
     });
 
-    for (const key in artist) {
-      if (updateArtistDto.grammy === false) {
-        artist.grammy = updateArtistDto.grammy;
-      } else if (updateArtistDto[key]) {
-        artist[key] = updateArtistDto[key];
+    if (!response) throw new NotFoundException();
+
+    const updatedArtist = await this.prisma.artist.update({
+      where: { id: artistId },
+      data: { name: dto.name, grammy: dto.grammy },
+    });
+
+    return prepareArtistResponse(updatedArtist);
+  }
+
+  async deleteArtist(artistId: string) {
+    try {
+      await this.prisma.artist.delete({ where: { id: artistId } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === PRISMA_ERROR) {
+          throw new NotFoundException();
+        }
       }
     }
-
-    const updatedArtist = await this.artistRepository.save(artist);
-
-    return updatedArtist;
-  }
-
-  async remove(artistId: string) {
-    await checkItemExistence(
-      this.artistRepository,
-      artistId,
-      ModelNames.ARTIST,
-    );
-    await this.artistRepository.delete(artistId);
-  }
-
-  async getArtistsById(artistIdsArray: string[]) {
-    const artistsArray = [];
-
-    artistIdsArray.forEach(async (artistId) => {
-      const artist = await this.artistRepository.find({
-        where: { id: artistId },
-      })[0];
-      artistsArray.push(artist);
-    });
-
-    return artistsArray;
-  }
-
-  async checkArtistExistence(artistId: string, isFavs = false) {
-    await checkItemExistence(
-      this.artistRepository,
-      artistId,
-      ModelNames.ARTIST,
-      isFavs,
-    );
   }
 }

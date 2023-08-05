@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-interface IUpdatePasswordDto {
+interface IUpdatePasswordDTO {
   oldPassword: string;
   newPassword: string;
 }
 
-export class UpdatePasswordDto implements IUpdatePasswordDto {
+export class UpdatePasswordDTO implements IUpdatePasswordDTO {
   @IsString()
   @IsNotEmpty()
   oldPassword: string;

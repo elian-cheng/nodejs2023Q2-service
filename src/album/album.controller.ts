@@ -9,41 +9,41 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
-import { CreateAlbumDto } from './dto/album.dto';
-import { UpdateAlbumDto } from './dto/updateAlbum.dto';
+import { AlbumDTO } from './dto/album.dto';
 
 @Controller('album')
 export class AlbumController {
-  constructor(private readonly albumService: AlbumService) {}
+  constructor(private albumService: AlbumService) {}
 
   @Get()
-  findAll() {
-    return this.albumService.findAll();
+  getAlbums() {
+    return this.albumService.getAlbums();
   }
 
-  @Get(':uuid')
-  async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return await this.albumService.findOne(uuid);
+  @Get(':id')
+  getAlbum(@Param('id', ParseUUIDPipe) id: string) {
+    return this.albumService.getAlbum(id);
   }
 
   @Post()
-  async create(@Body() createAlbumDto: CreateAlbumDto) {
-    return await this.albumService.create(createAlbumDto);
+  createAlbum(@Body(ValidationPipe) dto: AlbumDTO) {
+    return this.albumService.createAlbum(dto);
   }
 
-  @Put(':uuid')
-  async update(
-    @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @Body() updateAlbumDto: UpdateAlbumDto,
+  @Put(':id')
+  updateAlbumInfo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) dto: AlbumDTO,
   ) {
-    return await this.albumService.update(uuid, updateAlbumDto);
+    return this.albumService.updateAlbumInfo(id, dto);
   }
 
-  @Delete(':uuid')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return await this.albumService.remove(uuid);
+  @Delete(':id')
+  deleteAlbum(@Param('id', ParseUUIDPipe) id: string) {
+    return this.albumService.deleteAlbum(id);
   }
 }
