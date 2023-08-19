@@ -4,6 +4,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { SetMetadata } from '@nestjs/common';
 
 export const responseOnSuccess = (item: string, id: string) => {
   return `${item} with :id ${id} successfully added to favorites`;
@@ -30,3 +31,5 @@ export class StringOrNullConstraint implements ValidatorConstraintInterface {
     return typeof value === 'string' || value === null;
   }
 }
+
+export const Public = () => SetMetadata('isPublic', true);
