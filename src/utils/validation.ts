@@ -4,6 +4,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { access } from 'fs/promises';
 import { SetMetadata } from '@nestjs/common';
 
 export const responseOnSuccess = (item: string, id: string) => {
@@ -24,6 +25,15 @@ export function IsStringOrNull(validationOptions?: ValidationOptions) {
     });
   };
 }
+
+export const checkItemExistence = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
 
 @ValidatorConstraint({ name: 'IsStringOrNull' })
 export class StringOrNullConstraint implements ValidatorConstraintInterface {
