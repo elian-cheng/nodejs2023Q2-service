@@ -1,7 +1,7 @@
 # Home Library Service
 
 Repository for Home Library Service task at RS School's NodeJS 2023 Q2 course.  
-[Task description](https://github.com/AlreadyBored/nodejs-assignments/blob/main/assignments/rest-service/assignment.md)
+[Task description](https://github.com/AlreadyBored/nodejs-assignments/blob/main/assignments/logging-error-authentication-authorization/assignment.md)
 
 ### Prerequisites
 
@@ -23,7 +23,7 @@ cd nodejs2023Q2-service
 ### Switch to the necessary branch
 
 ```
-git checkout part-2
+git checkout part-3
 ```
 
 ### Install NPM modules
@@ -57,19 +57,15 @@ npm run docker
    After build images with command 'npm run docker' you can open another terminal and run the tests using the command:
 
 ```
-npm run docker:test
+npm run docker:test:auth
 ```
-
-4. Vulnerability scanning for images:  
-   After build images with command 'npm run docker' you can see the vulnerabilities in the Docker Desktop App by clicking on the image name
-   or by clicking on the Docker Scout in the menu and choosing the image in the dropdown select provided on the dashboard
 
 ### Working with the application
 
 You can work with the application:
 
 1. Using Postman.
-2. Using the capabilities of the Open API using `http://localhost:4000/doc/` address in your browser.
+2. Using the capabilities of the Open API on the `http://localhost:4000/doc/` address in your browser.
 
 ## API
 
@@ -177,9 +173,15 @@ Implemented endpoints:
 
 - `DELETE /favs/artist/:id` - delete artist from favorites
 
+`/auth` route - to operate with authentication and authorization:
+
+- `POST auth/signup` - send login and password to create a new user
+
+- `POST auth/login` - send login and password to get Access token (type: Bearer token)
+
 ## Testing
 
-After application running open new terminal and enter:
+After starting the app open new terminal and enter:
 
 To run all tests without authorization
 
